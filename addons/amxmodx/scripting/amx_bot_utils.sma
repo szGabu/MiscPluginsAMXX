@@ -1,8 +1,8 @@
 #include <amxmodx>
 #include <amxmisc>
 #include <fakemeta>
-#include <cstrike>
 #include <hamsandwich>
+#tryinclude <cstrike>
 #tryinclude <round_sys>
 
 #define PLUGIN_NAME 		"Bot Utils"
@@ -30,11 +30,13 @@ new g_cvarIgnoreSpectators;
 new g_cvarBotQuotaDetect;
 new g_cvarBotAddCmd;
 
-new g_iServerBotQuotaValue, g_iServerBotQuotaDetect;
-new bool:g_bUsingRcbot, bool:g_bIgnoreSpectators, bool:g_bBotQuotaAlways, bool:g_bInit = false;
-new g_szBotPrefix[32], g_szBotCommand[512];
-new g_bFirstSpawn[MAX_PLAYERS+1] = { true, ... };
-new g_szLastBotNameBuffer[MAX_NAME_LENGTH];
+new g_iServerBotQuotaValue, g_iServerBotQuotaDetect; 
+new bool:g_bUsingRcbot, bool:g_bIgnoreSpectators, bool:g_bBotQuotaAlways; // non-CS
+new g_szBotPrefix[32], g_szBotCommand[512]; // non-CS
+new g_bFirstSpawn[MAX_PLAYERS+1] = { true, ... }; // non-CS
+new g_szLastBotNameBuffer[MAX_NAME_LENGTH]; // non-CS
+
+new bool:g_bPluginReady = false;
 
 new g_iBotQuotaOrgValue = 0;
 new g_szBotQuotaModeOrgValue[32];
@@ -78,8 +80,11 @@ public plugin_init()
 		g_cvarBotJoinAfterPlayer = get_cvar_pointer("bot_join_after_player");
 		g_cvarBotJoinDelay = get_cvar_pointer("bot_join_delay");
 
+		if(!module_exists("cstrike"))
+        	set_fail_state("Missing critical dependency: AMXX 'cstrike' module.");
+
 		if(!g_cvarBotQuota || !g_cvarBotJoinAfterPlayer || !g_cvarBotJoinDelay)
-        	set_fail_state("Missing dependency: CSBot.");
+        	set_fail_state("Missing critical dependency: CSBot.");
 
 		if(g_cvarBotQuotaMode)
 			get_pcvar_string(g_cvarBotQuotaMode, g_szBotQuotaModeOrgValue, charsmax(g_szBotQuotaModeOrgValue));
@@ -95,6 +100,28 @@ public plugin_init()
 	}
 
 	AutoExecConfig();
+}
+
+public plugin_natives()
+{
+	set_module_filter("ModuleFilterHandler");
+	set_native_filter("NativeFilterHandler");
+}
+
+public ModuleFilterHandler(const szLibrary[], LibType:hLibType)
+{
+    if(equal(szLibrary, "cstrike"))
+        return PLUGIN_HANDLED
+
+    return PLUGIN_CONTINUE
+}
+
+public NativeFilterHandler(const szNative[], iNativeIndex, iTrapCode)
+{
+    if(iTrapCode == 0 && equal(szNative, "cs_set_user_team"))
+        return PLUGIN_HANDLED;
+
+    return PLUGIN_CONTINUE;
 }
 
 public OnConfigsExecuted()
@@ -114,7 +141,7 @@ public OnConfigsExecuted()
 			set_task(1.0, "Task_CheckCurrentPlayers", true, _, _, "b");
 	}
 
-	g_bInit = true;
+	g_bPluginReady = true;
 }
 
 public client_connect(iClient)
@@ -151,7 +178,7 @@ public Event_BotProgress()
 
 public Event_UpdateRoundBotQuota()
 {
-    if(!g_bInit)
+    if(!g_bPluginReady)
         return;
 
     new iPlayerCount = get_playersnum_ex(GetPlayers_ExcludeBots | GetPlayers_MatchTeam, "CT") + get_playersnum_ex(GetPlayers_ExcludeBots | GetPlayers_MatchTeam, "TERRORIST");
