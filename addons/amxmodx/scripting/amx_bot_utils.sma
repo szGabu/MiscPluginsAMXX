@@ -35,6 +35,7 @@ new bool:g_bUsingRcbot, bool:g_bIgnoreSpectators, bool:g_bBotQuotaAlways; // non
 new g_szBotPrefix[32], g_szBotCommand[512]; // non-CS
 new g_bFirstSpawn[MAX_PLAYERS+1] = { true, ... }; // non-CS
 new g_szLastBotNameBuffer[MAX_NAME_LENGTH]; // non-CS
+new bool:g_bBotsEnabled = true;
 
 new bool:g_bPluginReady = false;
 
@@ -99,7 +100,60 @@ public plugin_init()
 		register_event("BotProgress", "Event_BotProgress", "a");
 	}
 
+	register_clcmd("say votebots", "Command_VoteBots", _, "BU_VOTEBOTS_DESCRIPTION", _, true);
+
 	AutoExecConfig();
+}
+
+new bool:g_bCurrentlyInVote = false;
+new bool:g_bVoteArray[MAX_PLAYERS+1] = { false, ... };
+
+public Command_VoteBots(iClient)
+{
+	if(!g_bPluginReady || g_bCurrentlyInVote)
+		return PLUGIN_HANDLED;
+
+	for(new iIndex = 1; iIndex <= MaxClients; iIndex++)
+		g_bVoteArray[iIndex] = false;
+
+	new hMenu = menu_create(g_bBotsEnabled ? "BU_VOTEBOTS_TITLE_DISABLE" : "BU_VOTEBOTS_TITLE_ENABLE", "VoteBotsVoteHandle", true);
+
+	menu_setprop(hMenu, MPROP_EXIT, MEXIT_NEVER);
+	menu_additem(hMenu, "BU_VOTEBOTS_ENABLE", "1");
+	menu_additem(hMenu, "BU_VOTEBOTS_DISABLE", "2");
+	
+	// Display menu
+	menu_display(iClient, hMenu, _, 10);
+
+	set_task(10.0, "DetermineVoteWinner");
+
+	return PLUGIN_HANDLED;
+}
+
+public RoundZeroVoteHandle(iClient, hMenu, iItem)
+{
+    new szInfo[8];
+    menu_item_getinfo(hMenu, iItem, _, szInfo, charsmax(szInfo), _, _, _);
+    
+    new iOption = str_to_num(szInfo);
+    switch (iOption) 
+    {
+        case 1: 
+        {
+            g_iVoteTerrorist++;
+        }
+        case 2: 
+        {
+            g_iVoteCT++;
+        }
+    }
+    
+    return PLUGIN_HANDLED;
+}
+
+public DetermineVoteWinner(iTaskId)
+{
+    
 }
 
 public plugin_natives()
