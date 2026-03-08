@@ -1,0 +1,44 @@
+[en]
+BU_VOTEBOTS_DESCRIPTION = Initiate a vote to enable or disable bots. Requires majority vote to pass.
+BU_VOTEBOTS_DESCRIPTION_AL = Alias of !votebots
+BU_VOTEBOTS_IN_PROGRESS = A vote to enable/disable bots is already in progress. Please wait for it to conclude before starting a new one.
+BU_VOTEBOTS_DISABLED = Bots have been disabled by vote.
+BU_VOTEBOTS_ENABLED = Bots have been enabled by vote.
+BU_VOTEBOTS_TIED = The vote to enable/disable bots has ended in a tie. No changes have been made.
+BU_VOTEBOTS_TITLE_ENABLE = Want to play with bots? (Bots are currently disabled)
+BU_VOTEBOTS_TITLE_DISABLE = Want to play with bots? (Bots are currently enabled)
+BU_VOTEBOTS_ENABLE = Yes, enable bots
+BU_VOTEBOTS_DISABLE = No, disable bots
+BU_VOTEBOTS_VOTE_DISABLED = This vote is disabled
+BU_VOTEBOTS_VOTE_NO_EFFECTS = There are no bots to manage
+BU_QUOTA_DETECT_NOTICE = There are currently %d bots on the server. You can disable bots by typing !votebots in chat.
+
+[es]
+BU_VOTEBOTS_DESCRIPTION = Inicia una votación para activar o desactivar los bots. Requiere mayoría de votos para aprobarse.
+BU_VOTEBOTS_DESCRIPTION_AL = Alias de !votebots
+BU_VOTEBOTS_IN_PROGRESS = Ya hay una votación en curso para activar/desactivar los bots. Por favor, espera a que concluya antes de iniciar una nueva.
+BU_VOTEBOTS_DISABLED = Los bots han sido desactivados por votación.
+BU_VOTEBOTS_ENABLED = Los bots han sido activados por votación.
+BU_VOTEBOTS_TIED = La votación para activar/desactivar los bots ha terminado en empate. No se han realizado cambios.
+BU_VOTEBOTS_TITLE_ENABLE = ¿Quieres jugar con bots? (Los bots están actualmente desactivados)
+BU_VOTEBOTS_TITLE_DISABLE = ¿Quieres jugar con bots? (Los bots están actualmente activados)
+BU_VOTEBOTS_ENABLE = Sí, activar bots
+BU_VOTEBOTS_DISABLE = No, desactivar bots
+BU_VOTEBOTS_VOTE_DISABLED = Esta votación está desactivada
+BU_VOTEBOTS_VOTE_NO_EFFECTS = No hay bots para gestionar
+BU_QUOTA_DETECT_NOTICE = Actualmente hay %d bots en el servidor. Puedes desactivarlos escribiendo !votebots en el chat.
+
+[bp]
+BU_VOTEBOTS_DESCRIPTION = Inicia uma votação para ativar ou desativar os bots. Requer maioria de votos para ser aprovada.
+BU_VOTEBOTS_DESCRIPTION_AL = Apelido de !votebots
+BU_VOTEBOTS_IN_PROGRESS = Já há uma votação em andamento para ativar/desativar os bots. Por favor, aguarde a conclusão antes de iniciar uma nova.
+BU_VOTEBOTS_DISABLED = Os bots foram desativados por votação.
+BU_VOTEBOTS_ENABLED = Os bots foram ativados por votação.
+BU_VOTEBOTS_TIED = A votação para ativar/desativar os bots terminou empatada. Nenhuma alteração foi feita.
+BU_VOTEBOTS_TITLE_ENABLE = Quer jogar com bots? (Os bots estão atualmente desativados)
+BU_VOTEBOTS_TITLE_DISABLE = Quer jogar com bots? (Os bots estão atualmente ativados)
+BU_VOTEBOTS_ENABLE = Sim, ativar bots
+BU_VOTEBOTS_DISABLE = Não, desativar bots
+BU_VOTEBOTS_VOTE_DISABLED = Esta votação está desativada
+BU_VOTEBOTS_VOTE_NO_EFFECTS = Não há bots para gerenciar
+BU_QUOTA_DETECT_NOTICE = Atualmente há %d bots no servidor. Você pode desativá-los digitando !votebots no chat.
