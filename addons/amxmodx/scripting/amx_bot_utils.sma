@@ -15,14 +15,13 @@
 
 #define BOT_NAME            "Crusher" // CS bot name for init, replace it with your own if you changed it in BotProfiles.db 
 
-#define PFLAG_OBSERVER (1<<5)
-#define m_afPhysicsFlags 194
-
 new g_cvarDesiredBotQuota;
+new g_cvarVoteEnabled;
 new g_cvarBotQuota; // CS specific
 new g_cvarBotQuotaMode; // CS specific
 new g_cvarBotJoinAfterPlayer; // CS specific
 new g_cvarBotJoinDelay; // CS specific
+new g_cvarVoteApplyImmediately; // CS specific
 new g_cvarBotQuotaAlways;
 new g_cvarBotPrefix;
 new g_cvarBotUseRcBot;
@@ -31,13 +30,15 @@ new g_cvarBotQuotaDetect;
 new g_cvarBotAddCmd;
 
 new g_iServerBotQuotaValue, g_iServerBotQuotaDetect; 
+new bool:g_bEnableVote, bool:g_bVoteApplyImmediately;
 new bool:g_bUsingRcbot, bool:g_bIgnoreSpectators, bool:g_bBotQuotaAlways; // non-CS
 new g_szBotPrefix[32], g_szBotCommand[512]; // non-CS
-new g_bFirstSpawn[MAX_PLAYERS+1] = { true, ... }; // non-CS
+new g_bFirstSpawn[MAX_PLAYERS+1] = { true, ... };
 new g_szLastBotNameBuffer[MAX_NAME_LENGTH]; // non-CS
 new bool:g_bBotsEnabled = true;
 
 new bool:g_bPluginReady = false;
+new g_hVoteBotsHandle = INVALID_HANDLE;
 
 new g_iBotQuotaOrgValue = 0;
 new g_szBotQuotaModeOrgValue[32];
@@ -47,8 +48,11 @@ new g_iServerBotJoinDelayOrgValue = 0;
 public plugin_init() 
 {
 	register_plugin(PLUGIN_NAME, PLUGIN_VERSION, PLUGIN_AUTHOR);
-
+	register_dictionary("amx_bot_utils.txt");
+	register_dictionary("adminvote.txt");
 	g_cvarDesiredBotQuota = create_cvar("amx_bot_quota", cstrike_running() ? "10" : "4", FCVAR_NONE, "Amount playercount the bots should match.", true, 0.0, true, 32.0);
+	g_cvarVoteEnabled = create_cvar("amx_bot_quota_vote_enabled", "1", FCVAR_NONE, "Whether to allow voting to enable/disable bots.", true, 0.0, true, 1.0);
+	bind_pcvar_num(g_cvarVoteEnabled, g_bEnableVote);
 	bind_pcvar_num(g_cvarDesiredBotQuota, g_iServerBotQuotaValue);
 	hook_cvar_change(g_cvarDesiredBotQuota, "OnCvarBotQuotaChanged");
 
@@ -57,12 +61,12 @@ public plugin_init()
 		register_message(get_user_msgid("SayText"), "Event_NativeSayText");
 		register_message(get_user_msgid("TextMsg"), "Event_NativeTextMessage");
 
-		g_cvarBotQuotaAlways = register_cvar("amx_bot_quota_always", "1");
-		g_cvarBotPrefix = register_cvar("amx_bot_quota_prefix", "BOT");
-		g_cvarBotUseRcBot = register_cvar("amx_bot_quota_using_rcbot", "0");
-		g_cvarIgnoreSpectators = register_cvar("amx_bot_quota_ignore_spectators", "1");
-		g_cvarBotQuotaDetect = register_cvar("amx_bot_quota_mode", "1"); //0. timer | 1. events
-		g_cvarBotAddCmd = register_cvar("amx_bot_quota_addbot_cmd", "jk_botti addbot");
+		g_cvarBotQuotaAlways = create_cvar("amx_bot_quota_always", "1", FCVAR_NONE, "Whether to always keep bots up to the quota even if no human players are connected.", true, 0.0, true, 1.0);
+		g_cvarBotPrefix = create_cvar("amx_bot_quota_prefix", "BOT", FCVAR_NONE, "Prefix to add to bot names to prevent conflicts with human players. Set to empty string to disable.");
+		g_cvarBotUseRcBot = create_cvar("amx_bot_quota_using_rcbot", "0", FCVAR_NONE, "Whether to use RCBot commands.", true, 0.0, true, 1.0);
+		g_cvarIgnoreSpectators = create_cvar("amx_bot_quota_ignore_spectators", "1", FCVAR_NONE, "Whether to ignore spectators when calculating bot quota.", true, 0.0, true, 1.0);
+		g_cvarBotQuotaDetect = create_cvar("amx_bot_quota_mode", "1", FCVAR_NONE, "Method to detect bot quota changes.\n\n0. timer\n1. events", true, 0.0, true, 1.0);
+		g_cvarBotAddCmd = create_cvar("amx_bot_quota_addbot_cmd", "jk_botti addbot", FCVAR_NONE, "Command to add bots.");
 
 		bind_pcvar_num(g_cvarBotQuotaAlways, g_bBotQuotaAlways);
 		bind_pcvar_string(g_cvarBotPrefix, g_szBotPrefix, charsmax(g_szBotPrefix));
@@ -71,7 +75,6 @@ public plugin_init()
 		bind_pcvar_num(g_cvarBotQuotaDetect, g_iServerBotQuotaDetect); 
 		bind_pcvar_string(g_cvarBotAddCmd, g_szBotCommand, charsmax(g_szBotCommand));
 
-		RegisterHam(Ham_Spawn, "player", "HamForward_PlayerSpawn_Post", true);
 		register_clcmd("spectate", "Command_Spectate");
 	}
 	else
@@ -98,62 +101,129 @@ public plugin_init()
 		register_logevent("Event_UpdateRoundBotQuota", 2, "1=Round_End");
 		register_event("HLTV", "Event_UpdateRoundBotQuota", "a", "1=0", "2=0");
 		register_event("BotProgress", "Event_BotProgress", "a");
+		g_cvarVoteApplyImmediately = create_cvar("amx_bot_quota_vote_apply_immediately", "0", FCVAR_NONE, "Whether to apply bot quota changes immediately after voting instead of waiting for the next round. Enable for gamemodes like CSDM or similar.", true, 0.0, true, 1.0);
+		bind_pcvar_num(g_cvarVoteApplyImmediately, g_bVoteApplyImmediately);
 	}
 
-	register_clcmd("say votebots", "Command_VoteBots", _, "BU_VOTEBOTS_DESCRIPTION", _, true);
+	register_clcmd("say !votebots", "Command_VoteBots", _, "BU_VOTEBOTS_DESCRIPTION", _, true);
+	register_clcmd("say votebots", "Command_VoteBots", _, "BU_VOTEBOTS_DESCRIPTION_AL", _, true);
+	register_clcmd("say !bots", "Command_VoteBots", _, "BU_VOTEBOTS_DESCRIPTION_AL", _, true);
+	register_clcmd("say bots", "Command_VoteBots", _, "BU_VOTEBOTS_DESCRIPTION_AL", _, true);
+
+	RegisterHam(Ham_Spawn, "player", "HamForward_PlayerSpawn_Post", true);
 
 	AutoExecConfig();
 }
 
 new bool:g_bCurrentlyInVote = false;
-new bool:g_bVoteArray[MAX_PLAYERS+1] = { false, ... };
+new g_iVoteArray[MAX_PLAYERS+1] = { -1, ... };
 
 public Command_VoteBots(iClient)
 {
-	if(!g_bPluginReady || g_bCurrentlyInVote)
+	if(!g_bPluginReady || g_bCurrentlyInVote || !g_bEnableVote)
+	{
+		client_print(iClient, print_chat, "%L", LANG_PLAYER, g_bCurrentlyInVote ? "BU_VOTEBOTS_IN_PROGRESS" : "BU_VOTEBOTS_VOTE_DISABLED");
 		return PLUGIN_HANDLED;
+	}
+
+	new iCurrentBots = get_playersnum_ex(GetPlayers_ExcludeHuman | GetPlayers_ExcludeHLTV);
+	if(g_bBotsEnabled && iCurrentBots == 0)
+	{
+		client_print(iClient, print_chat, "%L", LANG_PLAYER, "BU_VOTEBOTS_VOTE_NO_EFFECTS");
+		return PLUGIN_HANDLED;
+	}
+
+	g_bCurrentlyInVote = true;
 
 	for(new iIndex = 1; iIndex <= MaxClients; iIndex++)
-		g_bVoteArray[iIndex] = false;
+		g_iVoteArray[iIndex] = -1;
 
-	new hMenu = menu_create(g_bBotsEnabled ? "BU_VOTEBOTS_TITLE_DISABLE" : "BU_VOTEBOTS_TITLE_ENABLE", "VoteBotsVoteHandle", true);
+	g_hVoteBotsHandle = menu_create(g_bBotsEnabled ? "BU_VOTEBOTS_TITLE_DISABLE" : "BU_VOTEBOTS_TITLE_ENABLE", "VoteBotsVoteHandle", true);
 
-	menu_setprop(hMenu, MPROP_EXIT, MEXIT_NEVER);
-	menu_additem(hMenu, "BU_VOTEBOTS_ENABLE", "1");
-	menu_additem(hMenu, "BU_VOTEBOTS_DISABLE", "2");
+	menu_setprop(g_hVoteBotsHandle, MPROP_EXIT, MEXIT_NEVER);
+	menu_additem(g_hVoteBotsHandle, "BU_VOTEBOTS_ENABLE", "1");
+	menu_additem(g_hVoteBotsHandle, "BU_VOTEBOTS_DISABLE", "2");
 	
 	// Display menu
-	menu_display(iClient, hMenu, _, 10);
+	menu_display(iClient, g_hVoteBotsHandle, _, 10);
 
 	set_task(10.0, "DetermineVoteWinner");
 
-	return PLUGIN_HANDLED;
+	return PLUGIN_CONTINUE;
 }
 
-public RoundZeroVoteHandle(iClient, hMenu, iItem)
+public VoteBotsVoteHandle(iClient, hMenu, iItem)
 {
-    new szInfo[8];
-    menu_item_getinfo(hMenu, iItem, _, szInfo, charsmax(szInfo), _, _, _);
-    
-    new iOption = str_to_num(szInfo);
-    switch (iOption) 
-    {
-        case 1: 
-        {
-            g_iVoteTerrorist++;
-        }
-        case 2: 
-        {
-            g_iVoteCT++;
-        }
-    }
-    
-    return PLUGIN_HANDLED;
+	new szInfo[8], szClientName[MAX_NAME_LENGTH];
+	menu_item_getinfo(hMenu, iItem, _, szInfo, charsmax(szInfo), _, _, _);
+	new iOption = str_to_num(szInfo);
+	get_user_name(iClient, szClientName, charsmax(szClientName));
+	client_print(0, print_chat, "%L", LANG_PLAYER, iOption == 1  ? "VOTED_FOR" : "VOTED_AGAINST", szClientName)
+	g_iVoteArray[iClient] = iOption == 1 ? 1 : 0;
+	return PLUGIN_HANDLED;
 }
 
 public DetermineVoteWinner(iTaskId)
 {
-    
+	g_bCurrentlyInVote = false;
+
+	new rgPlayers[MAX_PLAYERS], iPlayerCount, iYesVotes = 0, iNoVotes = 0;
+	get_players_ex(rgPlayers, iPlayerCount, GetPlayers_ExcludeBots | GetPlayers_ExcludeHLTV);
+	for(new i = 0; i < iPlayerCount; i++)
+	{
+		new iClient = rgPlayers[i];
+		new hVoteHandle = INVALID_HANDLE, hVoteKeys = INVALID_HANDLE;
+		#pragma unused hVoteKeys
+		#pragma unused hVoteHandle
+
+		// Workaround to remove the menu from players who haven't voted
+		if(!get_user_menu(iClient, hVoteHandle, hVoteKeys))
+		{
+			new hEmptyMenu = menu_create("", "Dummy");
+			menu_setprop(hEmptyMenu, MPROP_EXIT, MEXIT_NEVER);
+			menu_addtext2(hEmptyMenu, " ");
+			menu_display(iClient, hEmptyMenu, _, 1);
+		}
+
+		if(g_iVoteArray[iClient] == 1)
+			iYesVotes++;
+		else if(g_iVoteArray[iClient] == 0)
+			iNoVotes++;
+	}
+
+	if(iYesVotes == iNoVotes)
+	{
+		server_print("[INFO] %s::DetermineVoteWinner() - Vote tied, no changes made.", __BINARY__);
+		client_print(0, print_chat, "%L", LANG_PLAYER, "BU_VOTEBOTS_TIED");
+		return;
+	}
+	else if(iYesVotes > iNoVotes)
+	{
+		g_bBotsEnabled = true;
+		server_print("[INFO] %s::DetermineVoteWinner() - Bots have been enabled by vote.", __BINARY__);
+		client_print(0, print_chat, "%L", LANG_PLAYER, "BU_VOTEBOTS_ENABLED");
+	}
+	else
+	{
+		g_bBotsEnabled = false;
+		server_print("[INFO] %s::DetermineVoteWinner() - Bots have been disabled by vote.", __BINARY__);
+		client_print(0, print_chat, "%L", LANG_PLAYER, "BU_VOTEBOTS_DISABLED");
+	}
+
+	if(!cstrike_running())
+		set_task(0.5, "Task_CheckCurrentPlayers", false);
+	else if(g_bVoteApplyImmediately) // only CS games, this prevents CS from kicking bots on an ongoing round
+		Event_UpdateRoundBotQuota();
+}
+
+/**
+ * Returns nothing, it's a workaround for an empty callback.
+ *
+ * @return void
+ */
+public Dummy()
+{
+	return;
 }
 
 public plugin_natives()
@@ -172,7 +242,7 @@ public ModuleFilterHandler(const szLibrary[], LibType:hLibType)
 
 public NativeFilterHandler(const szNative[], iNativeIndex, iTrapCode)
 {
-    if(iTrapCode == 0 && equal(szNative, "cs_set_user_team"))
+    if(iTrapCode == 0 && (equal(szNative, "cs_set_user_team") || equal(szNative, "cs_get_user_team")))
         return PLUGIN_HANDLED;
 
     return PLUGIN_CONTINUE;
@@ -232,25 +302,27 @@ public Event_BotProgress()
 
 public Event_UpdateRoundBotQuota()
 {
-    if(!g_bPluginReady)
-        return;
+	if(!g_bPluginReady)
+		return;
 
-    new iPlayerCount = get_playersnum_ex(GetPlayers_ExcludeBots | GetPlayers_MatchTeam, "CT") + get_playersnum_ex(GetPlayers_ExcludeBots | GetPlayers_MatchTeam, "TERRORIST");
+	new iPlayerCount = get_playersnum_ex(GetPlayers_ExcludeBots | GetPlayers_MatchTeam, "CT") + get_playersnum_ex(GetPlayers_ExcludeBots | GetPlayers_MatchTeam, "TERRORIST");
 
-    if(iPlayerCount == 0)
-        set_pcvar_num(g_cvarBotQuota, g_iServerBotQuotaValue);
-    else 
-    {
-        if(iPlayerCount > g_iServerBotQuotaValue)
-        {
-            new iEvenBotQuota = (iPlayerCount % 2 == 0) ? iPlayerCount : iPlayerCount + 1;
-            set_pcvar_num(g_cvarBotQuota, iEvenBotQuota);
-        }
-        else 
-            set_pcvar_num(g_cvarBotQuota, g_iServerBotQuotaValue);    
+	if(!g_bBotsEnabled)
+		set_pcvar_num(g_cvarBotQuota, 0);
+	else if(iPlayerCount == 0)
+		set_pcvar_num(g_cvarBotQuota, g_iServerBotQuotaValue);
+	else 
+	{
+		if(iPlayerCount > g_iServerBotQuotaValue)
+		{
+			new iEvenBotQuota = (iPlayerCount % 2 == 0) ? iPlayerCount : iPlayerCount + 1;
+			set_pcvar_num(g_cvarBotQuota, iEvenBotQuota);
+		}
+		else 
+			set_pcvar_num(g_cvarBotQuota, g_iServerBotQuotaValue);    
 
-        BalanceTeams();
-    }
+		BalanceTeams();
+	}
 }
 
 BalanceTeams()
@@ -357,16 +429,33 @@ public OnCvarBotQuotaChanged(pCvar, const szOldVal[], const szNewVal[])
 
 public HamForward_PlayerSpawn_Post(iClient)
 {
-	if(cstrike_running())
-		return HAM_IGNORED;
-
-	if(g_iServerBotQuotaDetect == 1 && is_user_alive(iClient) && g_bFirstSpawn[iClient])
+	if(((!cstrike_running() &&g_iServerBotQuotaDetect == 1) || cstrike_running()) && is_user_alive(iClient) && g_bFirstSpawn[iClient] && !IsClientSpectating(iClient))
 	{
 		g_bFirstSpawn[iClient] = false;
-		set_task(0.5, "Task_CheckCurrentPlayers", false);
+
+		set_task(3.0, "Task_AnnounceBots", get_user_userid(iClient));
+
+		if(cstrike_running())
+		{
+			if(g_bVoteApplyImmediately)
+				Event_UpdateRoundBotQuota();
+		}
+		else
+			set_task(0.5, "Task_CheckCurrentPlayers", false);
 	}
 
 	return HAM_IGNORED;
+}
+
+public Task_AnnounceBots(iTaskId)
+{
+	new iClient = find_player_ex(FindPlayer_MatchUserId, iTaskId);
+	if(iClient)
+	{
+		new iNumBots = get_playersnum_ex(GetPlayers_ExcludeHuman | GetPlayers_ExcludeHLTV)
+		if(iNumBots > 0 && g_bBotsEnabled)
+			client_print(iClient, print_chat, "%L", LANG_PLAYER, "BU_QUOTA_DETECT_NOTICE", iNumBots);
+	}
 }
 
 public Command_Spectate(iClient)
@@ -410,9 +499,15 @@ public client_disconnected(iClient)
 		set_task(0.5, "Task_CheckCurrentPlayers", false);
 }
 
+public client_remove(iClient)
+{
+	if(get_playersnum_ex(GetPlayers_ExcludeBots | GetPlayers_ExcludeHLTV) == 0)
+	    g_bBotsEnabled = true;
+}
+
 public Task_CheckCurrentPlayers(bool:bTask)
 {
-	if(g_iServerBotQuotaDetect == 0 && !bTask || g_iServerBotQuotaDetect == 1 && bTask)
+	if(g_iServerBotQuotaDetect == 0 && !bTask || g_iServerBotQuotaDetect == 1 && bTask || cstrike_running())
 		return;
 
 	// Ensure bot quota is within valid range
@@ -427,7 +522,7 @@ public Task_CheckCurrentPlayers(bool:bTask)
 	{
 		if (is_user_connected(iClient))
 		{
-			if ((!is_spectating(iClient) && g_bIgnoreSpectators) || !g_bIgnoreSpectators)
+			if ((!IsClientSpectating(iClient) && g_bIgnoreSpectators) || !g_bIgnoreSpectators)
 			{
 				if (is_user_bot(iClient)) // Excludes proxies
 					iBotNum++;
@@ -443,7 +538,7 @@ public Task_CheckCurrentPlayers(bool:bTask)
 	if(iHumanNum == 0)
 		iDesiredBotNum = g_bBotQuotaAlways ? g_iServerBotQuotaValue : 0;
 
-	if (iHumanNum == 0 && iBotNum > 0 && !g_bBotQuotaAlways) 
+	if((iHumanNum == 0 && iBotNum > 0 && !g_bBotQuotaAlways) || !g_bBotsEnabled) 
 	{
 		// Remove all bots if no humans are connected
 		KickAllBots();
@@ -456,7 +551,7 @@ public Task_CheckCurrentPlayers(bool:bTask)
 		return;
 	}
 
-	if (g_bUsingRcbot)
+	if(g_bUsingRcbot)
 	{
 		server_cmd("rcbot config min_bots %d", iDesiredBotNum);
 		server_cmd("rcbot config max_bots %d", iDesiredBotNum);
@@ -465,9 +560,9 @@ public Task_CheckCurrentPlayers(bool:bTask)
 	} 
 	else 
 	{
-		if (iDesiredBotNum > iBotNum) 
+		if(iDesiredBotNum > iBotNum) 
 			AddBots(iDesiredBotNum - iBotNum);
-		else if (iDesiredBotNum < iBotNum)
+		else if(iDesiredBotNum < iBotNum)
 			RemoveBots(iBotNum - iDesiredBotNum);
 	}
 }
@@ -484,10 +579,27 @@ stock bool:ShouldSpawnMoreBots()
 	return iCurrentPlayers < g_iServerBotQuotaValue;
 }
 
-// Helper function to check if a player is spectating
-stock bool:is_spectating(iClient)
+/**
+ * Helper function to determine if a client is currently spectating
+ *
+ * @param iClient The client index to check
+ *
+ * @return bool True if the client is spectating, false otherwise
+ */
+stock bool:IsClientSpectating(iClient)
 {
-	return pev_valid(iClient) == 2 && (get_pdata_int(iClient, m_afPhysicsFlags) & PFLAG_OBSERVER > 0);
+	if(cstrike_running())
+	{
+		new CsTeams:iTeam = cs_get_user_team(iClient);
+		return iTeam == CS_TEAM_SPECTATOR || iTeam == CS_TEAM_UNASSIGNED;
+	}
+	else 
+	{
+		if(pev_valid(iClient) == 2)
+			return get_ent_data(iClient, "CBasePlayer", "m_afPhysicsFlags") & PFLAG_OBSERVER > 0;
+	}
+
+	return false;
 }
 
 // Helper function to kick all bots
