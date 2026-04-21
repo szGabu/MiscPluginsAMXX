@@ -58,9 +58,6 @@ public plugin_init()
 
 	if(!cstrike_running())
 	{
-		register_message(get_user_msgid("SayText"), "Event_NativeSayText");
-		register_message(get_user_msgid("TextMsg"), "Event_NativeTextMessage");
-
 		g_cvarBotQuotaAlways = create_cvar("amx_bot_quota_always", "1", FCVAR_NONE, "Whether to always keep bots up to the quota even if no human players are connected.", true, 0.0, true, 1.0);
 		g_cvarBotPrefix = create_cvar("amx_bot_quota_prefix", "BOT", FCVAR_NONE, "Prefix to add to bot names to prevent conflicts with human players. Set to empty string to disable.");
 		g_cvarBotUseRcBot = create_cvar("amx_bot_quota_using_rcbot", "0", FCVAR_NONE, "Whether to use RCBot commands.", true, 0.0, true, 1.0);
@@ -92,23 +89,29 @@ public plugin_init()
 
 		if(g_cvarBotQuotaMode)
 			get_pcvar_string(g_cvarBotQuotaMode, g_szBotQuotaModeOrgValue, charsmax(g_szBotQuotaModeOrgValue));
+			
 		g_iBotJoinAfterPlayerOrgValue = get_pcvar_num(g_cvarBotJoinAfterPlayer);
 		g_iServerBotJoinDelayOrgValue = get_pcvar_num(g_cvarBotJoinDelay);
 
 		if(g_cvarBotQuotaMode && !equali(g_szBotQuotaModeOrgValue, "fill")) //this is only for ReGame (Doesn't exist in HL25)
 			set_fail_state("This plugin only works with 'fill' bot quota mode.");
 
-		register_logevent("Event_UpdateRoundBotQuota", 2, "1=Round_End");
-		register_event("HLTV", "Event_UpdateRoundBotQuota", "a", "1=0", "2=0");
 		register_event("BotProgress", "Event_BotProgress", "a");
+		
 		g_cvarVoteApplyImmediately = create_cvar("amx_bot_quota_vote_apply_immediately", "0", FCVAR_NONE, "Whether to apply bot quota changes immediately after voting instead of waiting for the next round. Enable for gamemodes like CSDM or similar.", true, 0.0, true, 1.0);
 		bind_pcvar_num(g_cvarVoteApplyImmediately, g_bVoteApplyImmediately);
+
+		server_cmd("bot_add %s", BOT_NAME);
+		server_exec();
 	}
 
-	register_clcmd("say !votebots", "Command_VoteBots", _, "BU_VOTEBOTS_DESCRIPTION", _, true);
-	register_clcmd("say votebots", "Command_VoteBots", _, "BU_VOTEBOTS_DESCRIPTION_AL", _, true);
-	register_clcmd("say !bots", "Command_VoteBots", _, "BU_VOTEBOTS_DESCRIPTION_AL", _, true);
-	register_clcmd("say bots", "Command_VoteBots", _, "BU_VOTEBOTS_DESCRIPTION_AL", _, true);
+	register_clcmd("amx_votebots", "Command_SayVoteBots_Silent", _, "BU_VOTEBOTS_DESCRIPTION_AL", _, true);
+	register_clcmd("say !votebots", "Command_SayVoteBots", _, "BU_VOTEBOTS_DESCRIPTION", _, true);
+	register_clcmd("say votebots", "Command_SayVoteBots", _, "BU_VOTEBOTS_DESCRIPTION_AL", _, true);
+	register_clcmd("say /votebots", "Command_SayVoteBots_Silent", _, "BU_VOTEBOTS_DESCRIPTION_AL", _, true);
+	register_clcmd("say !bots", "Command_SayVoteBots", _, "BU_VOTEBOTS_DESCRIPTION_AL", _, true);
+	register_clcmd("say bots", "Command_SayVoteBots", _, "BU_VOTEBOTS_DESCRIPTION_AL", _, true);
+	register_clcmd("say /bots", "Command_SayVoteBots_Silent", _, "BU_VOTEBOTS_DESCRIPTION_AL", _, true);
 
 	RegisterHam(Ham_Spawn, "player", "HamForward_PlayerSpawn_Post", true);
 
@@ -118,19 +121,31 @@ public plugin_init()
 new bool:g_bCurrentlyInVote = false;
 new g_iVoteArray[MAX_PLAYERS+1] = { -1, ... };
 
-public Command_VoteBots(iClient)
+public Command_SayVoteBots(iClient)
+{
+	VoteBots(iClient);
+	return PLUGIN_CONTINUE;
+}
+
+public Command_SayVoteBots_Silent(iClient)
+{
+	VoteBots(iClient);
+	return PLUGIN_HANDLED;
+}
+
+VoteBots(iClient)
 {
 	if(!g_bPluginReady || g_bCurrentlyInVote || !g_bEnableVote)
 	{
 		client_print(iClient, print_chat, "%L", LANG_PLAYER, g_bCurrentlyInVote ? "BU_VOTEBOTS_IN_PROGRESS" : "BU_VOTEBOTS_VOTE_DISABLED");
-		return PLUGIN_HANDLED;
+		return;
 	}
 
 	new iCurrentBots = get_playersnum_ex(GetPlayers_ExcludeHuman | GetPlayers_ExcludeHLTV);
 	if(g_bBotsEnabled && iCurrentBots == 0)
 	{
 		client_print(iClient, print_chat, "%L", LANG_PLAYER, "BU_VOTEBOTS_VOTE_NO_EFFECTS");
-		return PLUGIN_HANDLED;
+		return;
 	}
 
 	g_bCurrentlyInVote = true;
@@ -148,8 +163,6 @@ public Command_VoteBots(iClient)
 	menu_display(iClient, g_hVoteBotsHandle, _, 10);
 
 	set_task(10.0, "DetermineVoteWinner");
-
-	return PLUGIN_CONTINUE;
 }
 
 public VoteBotsVoteHandle(iClient, hMenu, iItem)
@@ -254,11 +267,18 @@ public OnConfigsExecuted()
 
 	if(cstrike_running())
 	{
+		register_logevent("Event_UpdateRoundBotQuota", 2, "1=Round_End");
+		register_event("HLTV", "Event_UpdateRoundBotQuota", "a", "1=0", "2=0");
+
 		set_pcvar_num(g_cvarBotJoinAfterPlayer, g_iBotJoinAfterPlayerOrgValue);
 		set_pcvar_num(g_cvarBotJoinDelay, g_iServerBotJoinDelayOrgValue);
 	}
 	else
 	{
+		register_message(get_user_msgid("SayText"), "Event_NativeSayText");
+		register_message(get_user_msgid("TextMsg"), "Event_NativeTextMessage");
+		register_clcmd("spectate", "Command_Spectate");
+
 		if(g_iServerBotQuotaDetect == 1)
 			set_task(0.5, "Task_CheckCurrentPlayers", false);
 		else
@@ -275,6 +295,9 @@ public client_connect(iClient)
 
 public client_putinserver(iClient)
 {
+	if(!g_bPluginReady)
+		return;
+	
 	//check on next frame
 	RequestFrame("FrameNext_BotCheckName", iClient);
 
@@ -356,7 +379,7 @@ BalanceTeams()
 #if defined _round_sys_included
 public RoundSys_WarmUpClockTick(iTimeLeft)
 {
-    Event_UpdateRoundBotQuota();
+	Event_UpdateRoundBotQuota();
 }
 #endif
 
@@ -399,8 +422,13 @@ public Event_NativeTextMessage(iMsgId, iDest, iReceiver)
 		new szMessage[MAX_USER_INFO_LENGTH];
 		get_msg_arg_string(2, szMessage, charsmax(szMessage));
 		if((szMessage[0] == '-' || szMessage[0] == '+' || szMessage[0] == '*') && szMessage[1] == ' ')
-			if(containi(szMessage, g_szLastBotNameBuffer) == 2)
+		{
+			if(containi(szMessage, g_szLastBotNameBuffer) == 2 && strlen(g_szLastBotNameBuffer) > 0)
+			{
+				g_szLastBotNameBuffer = "";
 				return PLUGIN_HANDLED;
+			}
+		}
 	}
 
 	return PLUGIN_CONTINUE;
@@ -424,11 +452,15 @@ public OnCvarBotQuotaChanged(pCvar, const szOldVal[], const szNewVal[])
 {
 	if(cstrike_running())
 		return;
+
 	set_task(0.5, "Task_CheckCurrentPlayers", false);
 }
 
 public HamForward_PlayerSpawn_Post(iClient)
 {
+	if(!g_bPluginReady)
+		return HAM_IGNORED;
+
 	if(((!cstrike_running() &&g_iServerBotQuotaDetect == 1) || cstrike_running()) && is_user_alive(iClient) && g_bFirstSpawn[iClient] && !IsClientSpectating(iClient))
 	{
 		g_bFirstSpawn[iClient] = false;
