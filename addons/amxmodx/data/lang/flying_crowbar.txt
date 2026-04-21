@@ -1,0 +1,95 @@
+[en]
+FLYING_CROWBAR_HIT = %d damage at %dm
+FLYING_LONG_HIT = %s hit %s at an impressive distance of %d meters
+
+[es]
+FLYING_CROWBAR_HIT = %d a %dm
+FLYING_LONG_HIT = %s golpea a %s a una impresionante distancia de %d metros
+
+[bp]
+FLYING_CROWBAR_HIT = %d de dano a %dm
+FLYING_LONG_HIT = %s acertou %s a uma distância impressionante de %d metros
+
+[de]
+FLYING_CROWBAR_HIT = %d Schaden bei %dm
+FLYING_LONG_HIT = %s traf %s aus einer beeindruckenden Entfernung von %d Metern
+
+[sr]
+FLYING_CROWBAR_HIT = %d štete na %dm
+FLYING_LONG_HIT = %s je pogodio %s sa impresivne udaljenosti od %d metara
+
+[sv]
+FLYING_CROWBAR_HIT = %d skada på %dm
+FLYING_LONG_HIT = %s träffade %s på ett imponerande avstånd av %d meter
+
+[fr]
+FLYING_CROWBAR_HIT = %d de dégâts à %dm
+FLYING_LONG_HIT = %s a touché %s à une distance impressionnante de %d mètres
+
+[tr]
+FLYING_CROWBAR_HIT = %d hasar, %dm mesafede
+FLYING_LONG_HIT = %s, %s kişisini etkileyici bir mesafeden (%d metre) vurdu
+
+[cz]
+FLYING_CROWBAR_HIT = %d poškození na %dm
+FLYING_LONG_HIT = %s zasáhl %s z působivé vzdálenosti %d metrů
+
+[nl]
+FLYING_CROWBAR_HIT = %d schade op %dm
+FLYING_LONG_HIT = %s raakte %s vanaf een indrukwekkende afstand van %d meter
+
+[pl]
+FLYING_CROWBAR_HIT = %d obrażeń na %dm
+FLYING_LONG_HIT = %s trafił %s z imponującej odległości %d metrów
+
+[da]
+FLYING_CROWBAR_HIT = %d skade ved %dm
+FLYING_LONG_HIT = %s ramte %s fra en imponerende afstand på %d meter
+
+[bg]
+FLYING_CROWBAR_HIT = %d щета на %dm
+FLYING_LONG_HIT = %s удари %s от впечатляващо разстояние от %d метра
+
+[ro]
+FLYING_CROWBAR_HIT = %d daune la %dm
+FLYING_LONG_HIT = %s l-a lovit pe %s de la o distanță impresionantă de %d metri
+
+[hu]
+FLYING_CROWBAR_HIT = %d sebzés %dm-ről
+FLYING_LONG_HIT = %s eltalálta %s-t lenyűgöző, %d méteres távolságból
+
+[lt]
+FLYING_CROWBAR_HIT = %d žalos iš %dm
+FLYING_LONG_HIT = %s pataikė į %s iš įspūdingo %d metrų atstumo
+
+[sk]
+FLYING_CROWBAR_HIT = %d poškodenie na %dm
+FLYING_LONG_HIT = %s zasiahol %s z pôsobivej vzdialenosti %d metrov
+
+[mk]
+FLYING_CROWBAR_HIT = %d штета на %dm
+FLYING_LONG_HIT = %s го погоди %s од импресивна далечина од %d метри
+
+[hr]
+FLYING_CROWBAR_HIT = %d štete na %dm
+FLYING_LONG_HIT = %s je pogodio %s s impresivne udaljenosti od %d metara
+
+[bs]
+FLYING_CROWBAR_HIT = %d štete na %dm
+FLYING_LONG_HIT = %s je pogodio %s s impresivne udaljenosti od %d metara
+
+[ru]
+FLYING_CROWBAR_HIT = %d урона на %dм!
+FLYING_LONG_HIT = %s попал в %s с впечатляющего расстояния в %d метров
+
+[cn]
+FLYING_CROWBAR_HIT = %d 点伤害，距离 %d 米
+FLYING_LONG_HIT = %s 击中了 %s，距离达到令人印象深刻的 %d 米
+
+[al]
+FLYING_CROWBAR_HIT = %d dëme në %dm
+FLYING_LONG_HIT = %s goditi %s nga një distancë mbresëlënëse prej %d metrash
+
+[pt]
+FLYING_CROWBAR_HIT = %d de dano a %dm
+FLYING_LONG_HIT = %s acertou em %s a uma distância impressionante de %d metros
