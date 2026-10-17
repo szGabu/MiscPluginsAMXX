@@ -13,7 +13,7 @@
 #define ORIGINAL_JOIN_MSG	"has joined the game"
 #define ORIGINAL_LEAVE_MSG	"has left the game"
 
-#define BOT_NAME            "Crusher" // CS bot name for init, replace it with your own if you changed it in BotProfiles.db 
+#define BOT_NAME            "Orange" // CS bot name for init, replace it with your own if you changed it in BotProfiles.db 
 
 new g_cvarDesiredBotQuota;
 new g_cvarVoteEnabled;
@@ -116,6 +116,12 @@ public plugin_init()
 	RegisterHam(Ham_Spawn, "player", "HamForward_PlayerSpawn_Post", true);
 
 	AutoExecConfig();
+
+	//I need to forceread the configuration right now, because AutoExecConfigs executes too late
+	new szConfigFolder[PLATFORM_MAX_PATH];
+	get_configsdir(szConfigFolder, charsmax(szConfigFolder));
+	server_cmd("exec %s/plugins/plugin-amx_bot_utils.cfg", szConfigFolder);
+	server_exec();
 }
 
 new bool:g_bCurrentlyInVote = false;
@@ -261,7 +267,7 @@ public NativeFilterHandler(const szNative[], iNativeIndex, iTrapCode)
     return PLUGIN_CONTINUE;
 }
 
-public OnConfigsExecuted()
+public plugin_cfg()
 {
 	register_message(get_user_msgid("SayText"), "ChangeNameNotifBlock");
 

@@ -1,0 +1,70 @@
+[en]
+PLAYER_JOIN_STRING = %s has joined the server! (Country of Origin: %s)
+PLAYER_LEFT_STRING = %n has left the game. (Reason: %s)
+
+[es]
+PLAYER_JOIN_STRING = ¡%s ha entrado al servidor! (País: %s)
+PLAYER_LEFT_STRING = %n ha abandonado la partida. (Motivo: %s)
+
+[pt]
+PLAYER_LEFT_STRING = %n saiu do jogo. (Motivo: %s)
+
+[de]
+PLAYER_LEFT_STRING = %n hat das Spiel verlassen. (Grund: %s)
+
+[sr]
+PLAYER_LEFT_STRING = %n je napustio/la igru. (Razlog: %s)
+
+[sv]
+PLAYER_LEFT_STRING = %n har lämnat spelet. (Orsak: %s)
+
+[fr]
+PLAYER_LEFT_STRING = %n a quitté la partie. (Raison : %s)
+
+[tr]
+PLAYER_LEFT_STRING = %n oyundan ayrıldı. (Sebep: %s)
+
+[cz]
+PLAYER_LEFT_STRING = %n opustil(a) hru. (Důvod: %s)
+
+[nl]
+PLAYER_LEFT_STRING = %n heeft het spel verlaten. (Reden: %s)
+
+[pl]
+PLAYER_LEFT_STRING = %n opuścił(a) grę. (Powód: %s)
+
+[da]
+PLAYER_LEFT_STRING = %n har forladt spillet. (Årsag: %s)
+
+[bg]
+PLAYER_LEFT_STRING = %n напусна играта. (Причина: %s)
+
+[ro]
+PLAYER_LEFT_STRING = %n a părăsit jocul. (Motiv: %s)
+
+[hu]
+PLAYER_LEFT_STRING = %n elhagyta a játékot. (Indok: %s)
+
+[lt]
+PLAYER_LEFT_STRING = %n paliko žaidimą. (Priežastis: %s)
+
+[sk]
+PLAYER_LEFT_STRING = %n opustil(a) hru. (Dôvod: %s)
+
+[mk]
+PLAYER_LEFT_STRING = %n ја напушти играта. (Причина: %s)
+
+[hr]
+PLAYER_LEFT_STRING = %n je napustio/la igru. (Razlog: %s)
+
+[bs]
+PLAYER_LEFT_STRING = %n je napustio/la igru. (Razlog: %s)
+
+[ru]
+PLAYER_LEFT_STRING = %n покинул(а) игру. (Причина: %s)
+
+[cn]
+PLAYER_LEFT_STRING = %n 离开了游戏。（原因：%s）
+
+[al]
+PLAYER_LEFT_STRING = %n u largua nga loja. (Arsyeja: %s)
