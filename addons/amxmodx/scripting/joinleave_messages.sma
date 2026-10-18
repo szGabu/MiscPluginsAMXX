@@ -38,7 +38,10 @@ public plugin_init()
 	if(!cstrike_running())
 	{
 		if(is_running("svencoop"))
+		{
 			register_message(get_user_msgid("SayText"), "Event_NativeSayText");
+			register_message(get_user_msgid("TextMsg"), "Event_NativeSvenLeaveMessage");
+		}
 		else
 			register_message(get_user_msgid("TextMsg"), "Event_NativeJoinGameMessage");
 	}
@@ -49,6 +52,22 @@ public plugin_init()
 	
 	// Load overrides from file
 	LoadCountryOverrides();
+}
+
+public Event_NativeSvenLeaveMessage(iMsgId, iDest, iReceiver)
+{
+	new iDestinationType = get_msg_arg_int(1);
+
+	if(iDestinationType == 3)
+	{
+		new szMessage[MAX_USER_INFO_LENGTH];
+		get_msg_arg_string(2, szMessage, charsmax(szMessage));
+		// - GaussJumper9986 has left the game
+		if(containi(szMessage, ORIGINAL_LEAVE_MSG) != -1)
+			return PLUGIN_HANDLED;
+	}
+
+	return PLUGIN_CONTINUE;
 }
 
 public Event_NativeJoinGameMessage(iMsgId, iDest, iReceiver)
@@ -97,11 +116,11 @@ public client_putinserver(iClient)
 	set_task(2.0, "print_join_message", iClient);
 }
 
-public client_disconnected(iClient)
+public client_disconnected(iClient, bool:bDrop, szMessage[], iMaxLen)
 {
 	if(g_bFullyJoined[iClient] && get_pcvar_bool(g_cvarSounds) && (!g_bIgnoreBots || !is_user_bot(iClient)))
 	{
-		client_print(0, print_chat, "%L", LANG_PLAYER, "PLAYER_LEFT_STRING", iClient, szReason);
+		client_print(0, print_chat, "%L", LANG_PLAYER, "PLAYER_LEFT_STRING", iClient, szMessage);
 		client_cmd(0, "spk %s", LEAVE_SOUND);
 	}
 
